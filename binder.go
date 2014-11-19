@@ -47,19 +47,21 @@ import (
 			if err == nil && !fi.IsDir() {
 
 				fvar := "c" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Dir(f), " ")), " ", "", -1) + "_" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Base(f), " ")), " ", "", -1)
-				mp[f] = fvar
-				fkeys = append(fkeys, f)
-				fmt.Printf("\t%s = \"", fvar)
-				buf, err := ioutil.ReadFile(f)
-				if err != nil {
-					panic(err)
+				if _, ok := mp[f]; !ok {
+					mp[f] = fvar
+					fkeys = append(fkeys, f)
+					fmt.Printf("\t%s = \"", fvar)
+					buf, err := ioutil.ReadFile(f)
+					if err != nil {
+						panic(err)
+					}
+					b, err := snappy.Encode(nil, buf)
+					if err != nil {
+						panic(err)
+					}
+					fmt.Print(base64.URLEncoding.EncodeToString(b))
+					fmt.Printf("\"\n")
 				}
-				b, err := snappy.Encode(nil, buf)
-				if err != nil {
-					panic(err)
-				}
-				fmt.Print(base64.URLEncoding.EncodeToString(b))
-				fmt.Printf("\"\n")
 			}
 		}
 	}
