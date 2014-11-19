@@ -14,8 +14,12 @@ import (
 )
 
 func main() {
-	var pkgName string
+	var (
+		pkgName string
+		recurse bool
+	)
 	flag.StringVar(&pkgName, "package", "main", "Name of the package")
+	flag.BoolVar(&recurse, "r", false, "Recursively add all files in subfolders")
 	flag.Parse()
 
 	fmt.Printf("package %s\n", pkgName)
@@ -36,6 +40,28 @@ import (
 	mp := make(map[string]string, 0)
 
 	fkeys := make([]string, 0)
+
+	addfile := func(f string) error {
+		fvar := "c" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Dir(f), " ")), " ", "", -1) + "_" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Base(f), " ")), " ", "", -1)
+		fn := filepath.ToSlash(f)
+		if _, ok := mp[fn]; !ok {
+			mp[fn] = fvar
+			fkeys = append(fkeys, fn)
+			fmt.Printf("\t%s = \"", fvar)
+			buf, err := ioutil.ReadFile(f)
+			if err != nil {
+				return err
+			}
+			b, err := snappy.Encode(nil, buf)
+			if err != nil {
+				return err
+			}
+			fmt.Print(base64.URLEncoding.EncodeToString(b))
+			fmt.Printf("\"\n")
+		}
+		return nil
+	}
+
 	for _, pattern := range flag.Args() {
 		files, err := filepath.Glob(pattern)
 		if err != nil {
@@ -44,24 +70,22 @@ import (
 		sort.Strings(files)
 		for _, f := range files {
 			fi, err := os.Stat(f)
-			if err == nil && !fi.IsDir() {
-
-				fvar := "c" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Dir(f), " ")), " ", "", -1) + "_" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Base(f), " ")), " ", "", -1)
-				fn := filepath.ToSlash(f)
-				if _, ok := mp[fn]; !ok {
-					mp[fn] = fvar
-					fkeys = append(fkeys, fn)
-					fmt.Printf("\t%s = \"", fvar)
-					buf, err := ioutil.ReadFile(f)
+			if err == nil {
+				if !fi.IsDir() {
+					err = addfile(f)
 					if err != nil {
 						panic(err)
 					}
-					b, err := snappy.Encode(nil, buf)
-					if err != nil {
-						panic(err)
-					}
-					fmt.Print(base64.URLEncoding.EncodeToString(b))
-					fmt.Printf("\"\n")
+				} else if recurse {
+					err = filepath.Walk(f, func(path string, info os.FileInfo, err error) error {
+						if err != nil {
+							return err
+						}
+						if info.IsDir() {
+							return nil
+						}
+						return addfile(path)
+					})
 				}
 			}
 		}
