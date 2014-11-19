@@ -35,16 +35,28 @@ import (
 )`)
 	fmt.Printf("\nconst (\n")
 
-	re, _ := regexp.Compile("[^A-Za-z0-9]+")
+	re, _ := regexp.Compile("[^A-Za-z0-9]+") // regular expression to replace unwanted file characters
+	mp := make(map[string]string, 0)         // map to track filenames to the constant defining the data
+	fv := make(map[string]bool, 0)           // map to track if the name of the constant is already used and needs to be incremented
+	fkeys := make([]string, 0)               // list of filename keys (for sorting)
 
-	mp := make(map[string]string, 0)
-
-	fkeys := make([]string, 0)
-
+	// define the "addfile" function
 	addfile := func(f string) error {
 		fvar := "c" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Dir(f), " ")), " ", "", -1) + "_" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Base(f), " ")), " ", "", -1)
 		fn := filepath.ToSlash(f)
 		if _, ok := mp[fn]; !ok {
+			gvar := fvar
+			i := 1
+			for {
+				if _, ok := fv[gvar]; ok {
+					gvar = fmt.Sprintf("%s%d", fvar, i)
+					i++
+				} else {
+					break
+				}
+			}
+			fvar = gvar
+			fv[fvar] = true
 			mp[fn] = fvar
 			fkeys = append(fkeys, fn)
 			fmt.Printf("\t%s = \"", fvar)
