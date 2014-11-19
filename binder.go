@@ -47,9 +47,10 @@ import (
 			if err == nil && !fi.IsDir() {
 
 				fvar := "c" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Dir(f), " ")), " ", "", -1) + "_" + strings.Replace(strings.Title(re.ReplaceAllString(filepath.Base(f), " ")), " ", "", -1)
-				if _, ok := mp[f]; !ok {
-					mp[f] = fvar
-					fkeys = append(fkeys, f)
+				fn := filepath.ToSlash(f)
+				if _, ok := mp[fn]; !ok {
+					mp[fn] = fvar
+					fkeys = append(fkeys, fn)
 					fmt.Printf("\t%s = \"", fvar)
 					buf, err := ioutil.ReadFile(f)
 					if err != nil {
