@@ -24,3 +24,6 @@ You can server HTTP using:
 	http.Handle("/web/", http.HandlerFunc(foo.ServeHTTP))
 
 In this example the files in `tpl` won't be served because the path is `/web/`. You can find the content at: `http://localhost/web/project.css`.
+
+[![GoDoc](https://godoc.org/github.com/ancientlore/binder?status.svg)](https://godoc.org/github.com/ancientlore/binder)
+[![status](https://sourcegraph.com/api/repos/github.com/ancientlore/binder/.badges/status.png)](https://sourcegraph.com/github.com/ancientlore/binder)
