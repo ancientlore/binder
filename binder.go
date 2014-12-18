@@ -17,13 +17,27 @@ func main() {
 	var (
 		pkgName string
 		recurse bool
+		outFile string
 	)
 	flag.StringVar(&pkgName, "package", "main", "Name of the package")
+	flag.StringVar(&outFile, "o", "", "Output file (otherwise writes to stdout)")
 	flag.BoolVar(&recurse, "r", false, "Recursively add all files in subfolders")
 	flag.Parse()
 
-	fmt.Printf("package %s\n", pkgName)
-	fmt.Println(`
+	var out *os.File
+	var err error
+	if outFile != "" {
+		out, err = os.Create(outFile)
+		if err != nil {
+			panic(err)
+		}
+		defer out.Close()
+	} else {
+		out = os.Stdout
+	}
+
+	fmt.Fprintf(out, "package %s\n", pkgName)
+	fmt.Fprintln(out, `
 import (
 	"code.google.com/p/snappy-go/snappy"
 	"encoding/base64"
@@ -33,7 +47,7 @@ import (
 	"path"
 	"strings"
 )`)
-	fmt.Printf("\nconst (\n")
+	fmt.Fprintf(out, "\nconst (\n")
 
 	re, _ := regexp.Compile("[^A-Za-z0-9]+") // regular expression to replace unwanted file characters
 	mp := make(map[string]string, 0)         // map to track filenames to the constant defining the data
@@ -59,7 +73,7 @@ import (
 			fv[fvar] = true
 			mp[fn] = fvar
 			fkeys = append(fkeys, fn)
-			fmt.Printf("\t%s = \"", fvar)
+			fmt.Fprintf(out, "\t%s = \"", fvar)
 			buf, err := ioutil.ReadFile(f)
 			if err != nil {
 				return err
@@ -68,8 +82,8 @@ import (
 			if err != nil {
 				return err
 			}
-			fmt.Print(base64.URLEncoding.EncodeToString(b))
-			fmt.Printf("\"\n")
+			fmt.Fprint(out, base64.URLEncoding.EncodeToString(b))
+			fmt.Fprintf(out, "\"\n")
 		}
 		return nil
 	}
@@ -77,41 +91,43 @@ import (
 	for _, pattern := range flag.Args() {
 		files, err := filepath.Glob(pattern)
 		if err != nil {
-			fmt.Errorf("Cannot glob files:\n%s\n", err)
+			fmt.Fprintf(os.Stderr, "Cannot glob files:\n%s\n", err)
 		}
 		sort.Strings(files)
 		for _, f := range files {
 			fi, err := os.Stat(f)
 			if err == nil {
-				if !fi.IsDir() {
-					err = addfile(f)
-					if err != nil {
-						panic(err)
-					}
-				} else if recurse {
-					err = filepath.Walk(f, func(path string, info os.FileInfo, err error) error {
+				if !strings.HasPrefix(fi.Name(), ".") {
+					if !fi.IsDir() {
+						err = addfile(f)
 						if err != nil {
-							return err
+							panic(err)
 						}
-						if info.IsDir() {
-							return nil
-						}
-						return addfile(path)
-					})
+					} else if recurse {
+						err = filepath.Walk(f, func(path string, info os.FileInfo, err error) error {
+							if err != nil {
+								return err
+							}
+							if info.IsDir() {
+								return nil
+							}
+							return addfile(path)
+						})
+					}
 				}
 			}
 		}
 	}
 
-	fmt.Printf(")\n\n")
+	fmt.Fprintf(out, ")\n\n")
 
-	fmt.Printf("var staticFiles = map[string]string{\n")
+	fmt.Fprintf(out, "var staticFiles = map[string]string{\n")
 	for _, k := range fkeys {
-		fmt.Printf("\t\"/%s\": %s,\n", k, mp[k])
+		fmt.Fprintf(out, "\t\"/%s\": %s,\n", k, mp[k])
 	}
-	fmt.Printf("}\n")
+	fmt.Fprintf(out, "}\n")
 
-	fmt.Printf(`
+	fmt.Fprintf(out, `
 func Lookup(path string) []byte {
 	s, ok := staticFiles[path]
 	if !ok {
@@ -131,9 +147,9 @@ func Lookup(path string) []byte {
 	}
 }`, pkgName, pkgName)
 
-	fmt.Println()
+	fmt.Fprintln(out)
 
-	fmt.Println(`
+	fmt.Fprintln(out, `
 func ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Path
 	if strings.HasSuffix(p, "/") {
