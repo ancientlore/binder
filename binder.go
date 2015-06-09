@@ -1,10 +1,10 @@
 package main
 
 import (
-	"code.google.com/p/snappy-go/snappy"
 	"encoding/base64"
 	"flag"
 	"fmt"
+	"github.com/golang/snappy/snappy"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -39,7 +39,7 @@ func main() {
 	fmt.Fprintf(out, "package %s\n", pkgName)
 	fmt.Fprintln(out, `
 import (
-	"code.google.com/p/snappy-go/snappy"
+	"github.com/golang/snappy/snappy"
 	"encoding/base64"
 	"log"
 	"mime"
