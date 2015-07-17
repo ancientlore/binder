@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"github.com/golang/snappy/snappy"
+	"github.com/golang/snappy"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -78,10 +78,7 @@ import (
 			if err != nil {
 				return err
 			}
-			b, err := snappy.Encode(nil, buf)
-			if err != nil {
-				return err
-			}
+			b := snappy.Encode(nil, buf)
 			fmt.Fprint(out, base64.URLEncoding.EncodeToString(b))
 			fmt.Fprintf(out, "\"\n")
 		}
