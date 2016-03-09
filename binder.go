@@ -46,6 +46,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"time"
 )`)
 	fmt.Fprintf(out, "\nconst (\n")
 
@@ -158,6 +159,7 @@ func ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if mt != "" {
 			w.Header().Set("Content-Type", mt)
 		}
+		w.Header().Set("Expires", time.Now().AddDate(0, 0, 1).Format(time.RFC1123))
 		w.Write(b)
 	} else {
 		http.NotFound(w, r)
