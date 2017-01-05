@@ -4,13 +4,14 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"github.com/golang/snappy"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/golang/snappy"
 )
 
 func main() {
@@ -126,11 +127,10 @@ import (
 	fmt.Fprintf(out, "}\n")
 
 	fmt.Fprintf(out, `
+// Lookup returns the bytes associated with the given path, or nil if the path was not found.
 func Lookup(path string) []byte {
 	s, ok := staticFiles[path]
-	if !ok {
-		return nil
-	} else {
+	if ok {
 		d, err := base64.URLEncoding.DecodeString(s)
 		if err != nil {
 			log.Print("%s.Lookup: ", err)
@@ -143,11 +143,13 @@ func Lookup(path string) []byte {
 		}
 		return r
 	}
+	return nil
 }`, pkgName, pkgName)
 
 	fmt.Fprintln(out)
 
 	fmt.Fprintln(out, `
+// ServeHTTP serves the stored file data over HTTP.
 func ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Path
 	if strings.HasSuffix(p, "/") {
