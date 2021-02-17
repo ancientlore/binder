@@ -6,6 +6,8 @@ Binder
 
 Binder allows you to attach files to an executable and load the content at run time. It also includes an HTTP server routine to make it easy to serve static embedded content.
 
+> If you are on Go 1.16 or greater, you should consider using `//go:embed` instead of this tool. See the [embed](https://pkg.go.dev/embed) package.
+
 Usage:
 
 	binder [-package <name>] files
