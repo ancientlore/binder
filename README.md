@@ -1,8 +1,7 @@
 Binder
 ======
 
-[![Build Status](https://travis-ci.org/ancientlore/binder.svg?branch=master)](https://travis-ci.org/ancientlore/binder)
-[![GoDoc](https://godoc.org/github.com/ancientlore/binder?status.svg)](https://godoc.org/github.com/ancientlore/binder)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ancientlore/binder.svg)](https://pkg.go.dev/github.com/ancientlore/binder)
 
 Binder allows you to attach files to an executable and load the content at run time. It also includes an HTTP server routine to make it easy to serve static embedded content.
 
